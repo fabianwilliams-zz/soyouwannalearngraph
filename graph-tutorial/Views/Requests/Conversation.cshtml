@@ -1,0 +1,30 @@
+﻿@model Microsoft.Graph.Conversation
+
+@{
+    ViewBag.Title = "Onsite Meeting Requested";
+}
+<center>
+    <h2>@ViewBag.Title</h2>
+</center>
+
+@Html.ActionLink("Initiate Onsite Meeting Protocol", "CreateProject",
+        new { groupId = ViewBag.GroupId, conversationId = Model.Id },
+        new { @class = "btn btn-primary" })
+
+<h4>Internal Employee:</h4>
+<p>@Model.Topic</p>
+<br />
+
+<h4>Visitor(s):</h4>
+<p>
+    @foreach (string sender in Model.UniqueSenders)
+    {
+        @sender <br />
+    }
+</p>
+<br />
+
+<h4>Request Message:</h4>
+<p>
+    @Html.Raw(Model.Preview.Replace("\r\n", "<br />"))
+<p>

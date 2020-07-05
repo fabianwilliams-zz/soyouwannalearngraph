@@ -1,0 +1,43 @@
+﻿@model List<Microsoft.Graph.Conversation>
+
+@{
+    ViewBag.Title = "Onsite Visitor Requests";
+}
+
+<h2>@ViewBag.Title</h2>
+<table class="table table-striped table-hover table-condensed">
+    <thead>
+        <tr>
+            <td>
+                <strong>Meeting With</strong>
+            </td>
+            <td>
+                Visitors
+            </td>
+            <td>
+                <strong>Action</strong>
+            </td>
+        </tr>
+    </thead>
+    @* Modify to use Accept / Decline buttons *@
+    <tbody>
+        @foreach (Microsoft.Graph.Conversation conversation in Model)
+        {
+            <tr>
+                <td>
+                    @conversation.Topic
+                </td>
+                <td>
+                    @foreach (string sender in conversation.UniqueSenders)
+                    {
+                        @sender <br />
+                    }
+                </td>
+                <td>
+                    @Html.ActionLink("View", "Conversation", new { groupId = ViewBag.GroupId, conversationId = conversation.Id }, new { @class = "btn btn-primary" })
+                </td>
+            </tr>
+            @* Expand on thread details *@
+        }
+    </tbody>
+</table>
