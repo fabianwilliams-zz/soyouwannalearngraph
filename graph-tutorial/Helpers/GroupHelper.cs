@@ -2,7 +2,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
+using System.Timers;
 using System.Web;
 
 namespace graph_tutorial.Helpers
@@ -78,9 +80,9 @@ namespace graph_tutorial.Helpers
         {
             string taskTitle = $"{DateTime.Now.ToString("yyyyMMddHHmmss")}-{conversation.Topic}";
 
-            PlannerPlan plan = await GetPlannerPlanAsync(graphClient, groupId, "maintenance plan");
+            PlannerPlan plan = await GetPlannerPlanAsync(graphClient, groupId, "visitor intake");
 
-            string bucketId = await GetBucketIdAsync(graphClient, plan, "Requests");
+            string bucketId = await GetBucketIdAsync(graphClient, plan, "LobbyIntake");
 
             var newTask = new PlannerTask()
             {
@@ -138,7 +140,7 @@ namespace graph_tutorial.Helpers
             taskDetails.References.AddReference(attachFile.WebUrl, attachFile.Name);
 
             taskDetails.Checklist = new PlannerChecklistItems();
-            taskDetails.Checklist.AddChecklistItem("Schedule Time with client");
+            taskDetails.Checklist.AddChecklistItem("Meet Visitor in Lobby");
 
             var updatedTask = await graphClient.Planner.Tasks[task.Id].Details.Request()
                 .Header("If-Match", taskDetails.GetEtag())
@@ -171,14 +173,14 @@ namespace graph_tutorial.Helpers
 
         private static async Task<DriveItem> DuplicateCostSpreadsheet(GraphServiceClient graphClient, string groupId, string newName)
         {
-            string projectFolderId = await GroupHelper.GetDriveFolderIdAsync(graphClient, groupId, "Projects");
+            string projectFolderId = await GroupHelper.GetDriveFolderIdAsync(graphClient, groupId, "VisitorProtocols");
 
-            string budgetTemplateName = "FRM_Budget_Base.xlsx";
-            DriveItem budgetTemplate = await GroupHelper.GetDriveFileAsync(graphClient, groupId, projectFolderId, budgetTemplateName);
+            string covid19TemplateName = "Covid19Survey.xlsx";
+            DriveItem covid19Template = await GroupHelper.GetDriveFileAsync(graphClient, groupId, projectFolderId, covid19TemplateName);
 
             await graphClient.Groups[groupId]
                 .Drive
-                .Items[budgetTemplate.Id]
+                .Items[covid19Template.Id]
                 .Copy(newName)
                 .Request()
                 .PostAsync();
@@ -204,7 +206,7 @@ namespace graph_tutorial.Helpers
                 throw new ServiceException(new Error
                 {
                     Code = GraphErrorCode.ItemNotFound.ToString(),
-                    Message = "Projects Drive folder was not found"
+                    Message = "Drive folder was not found: " + folderName + "."
                 });
             }
 
@@ -224,7 +226,7 @@ namespace graph_tutorial.Helpers
                 throw new ServiceException(new Error
                 {
                     Code = GraphErrorCode.ItemNotFound.ToString(),
-                    Message = $"Budget Template: {budgetTemplateName} was not found"
+                    Message = $"Covid19 Visitor Template: {budgetTemplateName} was not found"
                 });
             }
 
