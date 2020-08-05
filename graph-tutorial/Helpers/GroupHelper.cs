@@ -69,7 +69,12 @@ namespace graph_tutorial.Helpers
 
             DriveItem copiedFile = await DuplicateCostSpreadsheet(graphClient, groupId, $"{task.Title}.xlsx");
 
-            await UpdateTaskDetails(graphClient, groupId, task, copiedFile);
+            string fileurl = copiedFile.WebUrl;
+            var myEtag = task.AdditionalData["@odata.etag"].ToString();
+
+            //await UpdateTaskDetails(graphClient, groupId, task, copiedFile);
+            //Cannot for hte life of me get ETag Patch to work.
+            //await UpdateTaskDetailsV2(graphClient, groupId, task, fileurl, copiedFile, myEtag);
 
             await ReplyToCustomer(graphClient, groupId, conversation, me);
 
@@ -142,10 +147,34 @@ namespace graph_tutorial.Helpers
             taskDetails.Checklist = new PlannerChecklistItems();
             taskDetails.Checklist.AddChecklistItem("Meet Visitor in Lobby");
 
-            var updatedTask = await graphClient.Planner.Tasks[task.Id].Details.Request()
+            //not useing anymore
+            //                .Header("Prefer", "return=represendation")
+
+            PlannerTaskDetails updatedTask = await graphClient.Planner.Tasks[task.Id].Details.Request()
                 .Header("If-Match", taskDetails.GetEtag())
                 .Header("Prefer", "return=represendation")
                 .UpdateAsync(taskDetails);
+
+        }
+
+        private static async Task UpdateTaskDetailsV2(GraphServiceClient graphClient, string groupId, PlannerTask task, string newFileName, DriveItem attachFile, string myEtag)
+        {
+            PlannerTaskDetails taskDetails = new PlannerTaskDetails();
+ 
+            taskDetails = await GetPlannerTaskDetailsAsync(graphClient, task);
+
+
+            taskDetails.AdditionalData =
+                new Dictionary<string, object>()
+                    {
+                        {newFileName, attachFile.Name}
+                    };
+
+            await graphClient.Planner.Tasks[task.Id].Details
+                .Request()
+                .Header("If-Match", myEtag)
+                .UpdateAsync(taskDetails);
+
         }
 
         private static async Task<PlannerTaskDetails> GetPlannerTaskDetailsAsync(GraphServiceClient graphClient, PlannerTask task)
@@ -239,13 +268,13 @@ namespace graph_tutorial.Helpers
             string replyMessage = $@"
             Hello {firstSender},
 
-            Thank you for reaching out to the Maintenance Department. 
+            Thank you registering with our Visitor Intake Utility. 
 
-            We wanted to let you know that {me.DisplayName} has been assigned to your request, 
-            and should be contacting you shortly to schedule a time to stop by.
+            We wanted to let you know that {me.DisplayName} has been assigned to your entry and a COVID-19 Protocol screening 
+            has been authroized for you to complete
 
             Thank you,
-            Maintenance Team
+            Secuirty Team
                             ";
 
             var post = new Post() { Body = new ItemBody() { Content = replyMessage, ContentType = BodyType.Text } }; //TODO Improve body text 
